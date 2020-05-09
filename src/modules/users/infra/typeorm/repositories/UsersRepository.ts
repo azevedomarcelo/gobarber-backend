@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { getRepository, Repository } from 'typeorm';
 
 import IUsersRepository from '@modules/users/repositories/IUsersRepository';

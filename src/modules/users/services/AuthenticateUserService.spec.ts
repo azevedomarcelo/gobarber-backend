@@ -5,17 +5,25 @@ import FakeHashProvider from '../providers/HashProvider/fakes/FakeHashProvider';
 import AuthenticateUserService from './AuthenticateUserService';
 import CreateUserService from './CreateUserService';
 
-describe('AuthenticateUser', () => {
-  it('should be able to authenticate', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeHashProvider = new FakeHashProvider();
+let fakeUserRepository: FakeUsersRepository;
+let fakeHashProvider:FakeHashProvider;
+let createUser: CreateUserService;
+let authenticateUser: AuthenticateUserService;
 
-    const createUser = new CreateUserService(
+describe('AuthenticateUser', () => {
+  beforeEach(() => {
+    fakeUserRepository = new FakeUsersRepository();
+    fakeHashProvider = new FakeHashProvider();
+
+    createUser = new CreateUserService(fakeUserRepository, fakeHashProvider);
+
+    authenticateUser = new AuthenticateUserService(
       fakeUserRepository,
       fakeHashProvider,
     );
-    const authenticateUser = new AuthenticateUserService(fakeUserRepository, fakeHashProvider);
+  });
 
+  it('should be able to authenticate', async () => {
     // Criamos primeiro o usuário, para depois fazer a autenticação
     const user = await createUser.execute({
       name: 'Jhon Doe',
@@ -34,27 +42,13 @@ describe('AuthenticateUser', () => {
   });
 
   it('should not be able to authenticate with non existing user', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeHashProvider = new FakeHashProvider();
-
-    const authenticateUser = new AuthenticateUserService(fakeUserRepository, fakeHashProvider);
-
-    expect(authenticateUser.execute({
+    await expect(authenticateUser.execute({
       email: 'jhondoe@email.com.br',
       password: '123456',
     })).rejects.toBeInstanceOf(AppError);
   });
 
   it('should not be able to authenticate with wrong password', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeHashProvider = new FakeHashProvider();
-
-    const createUser = new CreateUserService(
-      fakeUserRepository,
-      fakeHashProvider,
-    );
-    const authenticateUser = new AuthenticateUserService(fakeUserRepository, fakeHashProvider);
-
     // Criamos primeiro o usuário, para depois fazer a autenticação
     const user = await createUser.execute({
       name: 'Jhon Doe',
@@ -63,7 +57,7 @@ describe('AuthenticateUser', () => {
 
     });
 
-    expect(authenticateUser.execute({
+    await expect(authenticateUser.execute({
       email: 'jhondoe@email.com.br',
       password: '123654',
     })).rejects.toBeInstanceOf(AppError);

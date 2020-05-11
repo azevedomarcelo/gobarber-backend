@@ -4,14 +4,19 @@ import FakeStorageProvider from '@shared/container/provider/StorageProvider/fake
 import FakeUsersRepository from '../repositories/fakes/FakeUsersRepository';
 import UpdateUserAvatarService from './UpdateUserAvatarService';
 
+let fakeUserRepository: FakeUsersRepository;
+let fakeStorageProvider: FakeStorageProvider;
+let updateUserAvatar: UpdateUserAvatarService;
 
 describe('UpdateUserAvatar', () => {
+  beforeEach(() => {
+    fakeUserRepository = new FakeUsersRepository();
+    fakeStorageProvider = new FakeStorageProvider();
+
+    updateUserAvatar = new UpdateUserAvatarService(fakeUserRepository, fakeStorageProvider);
+  });
+
   it('should not be able to update with non existing avatar', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeStorageProvider = new FakeStorageProvider();
-
-    const updateUserAvatar = new UpdateUserAvatarService(fakeUserRepository, fakeStorageProvider);
-
     const user = await fakeUserRepository.create({
       name: 'Jhon Doe',
       email: 'jhondoe@email.com.br',
@@ -27,24 +32,14 @@ describe('UpdateUserAvatar', () => {
   });
 
   it('should be able to create a new user', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeStorageProvider = new FakeStorageProvider();
-
-    const updateUserAvatar = new UpdateUserAvatarService(fakeUserRepository, fakeStorageProvider);
-
-    expect(updateUserAvatar.execute({
+    await expect(updateUserAvatar.execute({
       user_id: 'non existing user',
       avatarFilename: 'avatar.jpg',
     })).rejects.toBeInstanceOf(AppError);
   });
 
   it('should delete old avatar when uploading a new one', async () => {
-    const fakeUserRepository = new FakeUsersRepository();
-    const fakeStorageProvider = new FakeStorageProvider();
-
     const deleteFile = jest.spyOn(fakeStorageProvider, 'deleteFile');
-
-    const updateUserAvatar = new UpdateUserAvatarService(fakeUserRepository, fakeStorageProvider);
 
     const user = await fakeUserRepository.create({
       name: 'Jhon Doe',

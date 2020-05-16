@@ -5,6 +5,7 @@ import {
 
 import AppError from '@shared/errors/AppError';
 
+import ICacheProvider from '@shared/container/provider/CachProvider/models/ICacheProvider';
 import { injectable, inject } from 'tsyringe';
 import INotificationsRepository from '@modules/notifications/repositories/INotificationsRepository';
 import Appointment from '../infra/typeorm/entities/Appointment';
@@ -25,6 +26,9 @@ class CreateAppointmentService {
 
     @inject('NotificationsRepository')
     private notificationsRepository: INotificationsRepository,
+
+    @inject('CacheProvider')
+    private cacheProvider: ICacheProvider,
   ) {}
 
   public async execute({ date, provider_id, user_id }: IRequest): Promise<Appointment> {
@@ -48,7 +52,6 @@ class CreateAppointmentService {
       throw new AppError('Appointment is already booked!');
     }
 
-
     const appointment = await this.appointmentsRepository.create({
       provider_id,
       user_id,
@@ -56,10 +59,13 @@ class CreateAppointmentService {
     });
 
     const dateFormatted = format(appointmentDate, "dd/MM/yyyy 'às' HH:mm'h'");
+
     await this.notificationsRepository.create({
       recipient_id: provider_id,
       content: `Novo agendamento para dia ${dateFormatted}`,
-    })
+    });
+
+    await this.cacheProvider.invalidate(`provider-appointments:${provider_id}:${format(appointmentDate, 'yyyy-M-d')}`);
 
     return appointment;
   }
